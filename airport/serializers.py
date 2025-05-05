@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from airport.models import Airport, Route
+from airport.models import Airport, Route, AirplaneType, Airplane
 
 
 class AirportSerializer(serializers.ModelSerializer):
@@ -48,3 +48,41 @@ class RouteDetailSerializer(RouteSerializer):
                   "destination_id",
                   "destination_name",
                   "distance")
+
+
+class AirplaneTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AirplaneType
+        fields = ("id", "name")
+
+    def validate_name(self, value):
+        if AirplaneType.objects.filter(name__iexact=value).exists():
+            raise serializers.ValidationError("An airplane type with this name already exists.")
+        return value
+
+
+class AirplaneSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Airplane
+        fields = ("id", "name", "rows", "seats_in_row", "airplane_type")
+
+        def validate_name(self, value):
+            if Airplane.objects.filter(name__iexact=value).exists():
+                raise serializers.ValidationError("An airplane with this name already exists.")
+            return value
+
+
+class AirplaneListSerializer(AirplaneSerializer):
+    airplane_type = serializers.CharField(source="airplane_type.name")
+
+    class Meta:
+        model = Airplane
+        fields = ("id", "name", "airplane_type")
+
+
+class AirplaneDetailSerializer(AirplaneSerializer):
+    airplane_type = serializers.CharField(source="airplane_type.name")
+
+    class Meta:
+        model = Airplane
+        fields = ("id", "name", "rows", "seats_in_row", "airplane_type")
