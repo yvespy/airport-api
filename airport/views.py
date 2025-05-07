@@ -1,8 +1,9 @@
 from rest_framework import viewsets
 
-from airport.models import Airport, Route, AirplaneType, Airplane
+from airport.models import Airport, Route, AirplaneType, Airplane, Crew, Flight
 from airport.serializers import AirportSerializer, RouteSerializer, RouteListSerializer, RouteDetailSerializer, \
-    AirplaneTypeSerializer, AirplaneSerializer, AirplaneListSerializer, AirplaneDetailSerializer
+    AirplaneTypeSerializer, AirplaneSerializer, AirplaneListSerializer, AirplaneDetailSerializer, CrewSerializer, \
+    CrewDetailSerializer, FlightSerializer, FlightListSerializer, FlightDetailSerializer
 
 
 class AirportViewSet(viewsets.ModelViewSet):
@@ -49,5 +50,51 @@ class AirplaneViewSet(viewsets.ModelViewSet):
         queryset = self.queryset
         if self.action in ("list", "retrieve"):
             return queryset.select_related("airplane_type")
+
+        return queryset
+
+
+class CrewViewSet(viewsets.ModelViewSet):
+    queryset = Crew.objects.all()
+    serializer_class = CrewSerializer
+
+    def get_serializer_class(self):
+        if self.action == "retrieve":
+            return CrewDetailSerializer
+        return CrewSerializer
+
+    def get_queryset(self):
+        queryset = self.queryset
+        if self.action == "retrieve":
+            return queryset.prefetch_related("flight_set__airplane")
+
+        return queryset
+
+
+class FlightViewSet(viewsets.ModelViewSet):
+    queryset = Flight.objects.all()
+    serializer_class = FlightSerializer
+
+    def get_serializer_class(self):
+        if self.action == "list":
+            return FlightListSerializer
+        elif self.action == "retrieve":
+            return FlightDetailSerializer
+        return FlightSerializer
+
+    def get_queryset(self):
+        queryset = self.queryset
+        if self.action == "list":
+            return (
+                queryset
+                .select_related("route__source",
+                                "route__destination",
+                                "airplane")
+            )
+        elif self.action == "retrieve":
+            return (
+                queryset.select_related("route__source", "route__destination", "airplane")
+                .prefetch_related("crew")
+            )
 
         return queryset
