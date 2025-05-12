@@ -1,5 +1,7 @@
+from django.db import transaction
 from rest_framework import serializers
-from airport.models import Airport, Route, AirplaneType, Airplane, Crew, Flight
+
+from airport.models import Airport, Route, AirplaneType, Airplane, Crew, Flight, Ticket, Order
 
 
 class AirportSerializer(serializers.ModelSerializer):
@@ -160,7 +162,82 @@ class FlightListSerializer(FlightSerializer):
         )
 
 
+class TicketSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Ticket
+        fields = ("id", "row", "seat", "flight")
+
+    def validate(self, attrs):
+        flight = attrs.get("flight")
+        row = attrs.get("row")
+        seat = attrs.get("seat")
+
+        if Ticket.objects.filter(flight=flight, row=row, seat=seat).exists():
+            raise serializers.ValidationError("A ticket with this flight, row, and seat already exists.")
+
+        return attrs
+
+
+class TakenSeatSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Ticket
+        fields = ("row", "seat")
+
+
 class FlightDetailSerializer(FlightSerializer):
     route = RouteDetailSerializer()
     airplane = AirplaneDetailSerializer()
     crew = CrewSerializer(many=True)
+    taken_seats= TakenSeatSerializer(source="tickets", many=True, read_only=True)
+
+    class Meta:
+        model = Flight
+        fields = ("id", "route", "airplane", "departure_time", "arrival_time", "crew", "taken_seats")
+
+
+class OrderSerializer(serializers.ModelSerializer):
+    tickets = TicketSerializer(many=True, read_only=False, allow_empty=False)
+
+    class Meta:
+        model = Order
+        fields = ("id", "created_at", "tickets")
+
+    def validate(self, attrs):
+        tickets = self.initial_data.get("tickets", [])
+        seen = set()
+
+        for ticket in tickets:
+            key = (ticket["row"], ticket["seat"], ticket["flight"])
+            if key in seen:
+                raise serializers.ValidationError(
+                    f"Duplicate ticket in order: row {ticket['row']}, seat {ticket['seat']}, flight {ticket['flight']}"
+                )
+            seen.add(key)
+
+        return attrs
+
+
+    def create(self, validated_data):
+        with transaction.atomic():
+            tickets_data = validated_data.pop("tickets")
+            order = Order.objects.create(**validated_data)
+            for ticket_data in tickets_data:
+                Ticket.objects.create(order=order, **ticket_data)
+            return order
+
+
+class OrderListSerializer(OrderSerializer):
+    tickets = TakenSeatSerializer(many=True, read_only=True)
+
+
+    class Meta:
+        model = Order
+        fields = ("id", "created_at", "tickets")
+
+
+class OrderDetailSerializer(OrderSerializer):
+    tickets = TicketSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Order
+        fields = ("id", "created_at", "tickets")
