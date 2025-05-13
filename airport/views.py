@@ -1,3 +1,4 @@
+from django.db.models import Count, F
 from rest_framework import viewsets
 
 from airport.models import Airport, Route, AirplaneType, Airplane, Crew, Flight, Order
@@ -90,7 +91,7 @@ class FlightViewSet(viewsets.ModelViewSet):
                 queryset
                 .select_related("route__source",
                                 "route__destination",
-                                "airplane")
+                                "airplane",).annotate(available_tickets=F("airplane__rows") * F("airplane__seats_in_row") - Count("tickets", distinct=True))
             )
         elif self.action == "retrieve":
             return (

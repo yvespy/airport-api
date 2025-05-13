@@ -150,6 +150,7 @@ class FlightSerializer(serializers.ModelSerializer):
 class FlightListSerializer(FlightSerializer):
     source = serializers.CharField(source="route.source.name")
     destination = serializers.CharField(source="route.destination.name")
+    available_tickets = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Flight
@@ -159,10 +160,11 @@ class FlightListSerializer(FlightSerializer):
             "departure_time",
             "destination",
             "arrival_time",
+            "available_tickets",
         )
 
 
-class TicketSerializer(serializers.ModelSerializer):
+class TicketSerializer(serializers.ModelSerializer): #Fix it later
     class Meta:
         model = Ticket
         fields = ("id", "row", "seat", "flight")
@@ -178,13 +180,13 @@ class TicketSerializer(serializers.ModelSerializer):
         return attrs
 
 
-class TakenSeatSerializer(serializers.ModelSerializer):
+class TakenSeatSerializer(serializers.ModelSerializer):#Fix it later
     class Meta:
         model = Ticket
         fields = ("row", "seat")
 
 
-class FlightDetailSerializer(FlightSerializer):
+class FlightDetailSerializer(FlightSerializer):#Fix it later
     route = RouteDetailSerializer()
     airplane = AirplaneDetailSerializer()
     crew = CrewSerializer(many=True)
@@ -195,7 +197,11 @@ class FlightDetailSerializer(FlightSerializer):
         fields = ("id", "route", "airplane", "departure_time", "arrival_time", "crew", "taken_seats")
 
 
-class OrderSerializer(serializers.ModelSerializer):
+class TicketListSerializer(TicketSerializer):
+    flight = FlightListSerializer(read_only=True)
+
+
+class OrderSerializer(serializers.ModelSerializer):#Fix it later
     tickets = TicketSerializer(many=True, read_only=False, allow_empty=False)
 
     class Meta:
@@ -226,8 +232,8 @@ class OrderSerializer(serializers.ModelSerializer):
             return order
 
 
-class OrderListSerializer(OrderSerializer):
-    tickets = TakenSeatSerializer(many=True, read_only=True)
+class OrderListSerializer(OrderSerializer):#Fix it later
+    tickets = TicketListSerializer(many=True, read_only=True)
 
 
     class Meta:
@@ -235,7 +241,7 @@ class OrderListSerializer(OrderSerializer):
         fields = ("id", "created_at", "tickets")
 
 
-class OrderDetailSerializer(OrderSerializer):
+class OrderDetailSerializer(OrderSerializer):#Fix it later
     tickets = TicketSerializer(many=True, read_only=True)
 
     class Meta:
