@@ -1,12 +1,32 @@
 from django.db.models import Count, F
 from rest_framework import viewsets
 
-from airport.models import Airport, Route, AirplaneType, Airplane, Crew, Flight, Order
-from airport.permissions import AdminAllOrIsAuthenticatedReadOnly, IsAdminUserOnly, IsAuthenticatedOnly
-from airport.serializers import AirportSerializer, RouteSerializer, RouteListSerializer, RouteDetailSerializer, \
-    AirplaneTypeSerializer, AirplaneSerializer, AirplaneListSerializer, AirplaneDetailSerializer, CrewSerializer, \
-    CrewDetailSerializer, FlightSerializer, FlightListSerializer, FlightDetailSerializer, OrderSerializer, \
-    OrderListSerializer, OrderDetailSerializer
+from airport.models import (Airport,
+                            Route,
+                            AirplaneType,
+                            Airplane,
+                            Crew,
+                            Flight,
+                            Order)
+from airport.permissions import (AdminAllOrIsAuthenticatedReadOnly,
+                                 IsAdminUserOnly,
+                                 IsAuthenticatedOnly)
+from airport.serializers import (AirportSerializer,
+                                 RouteSerializer,
+                                 RouteListSerializer,
+                                 RouteDetailSerializer,
+                                 AirplaneTypeSerializer,
+                                 AirplaneSerializer,
+                                 AirplaneListSerializer,
+                                 AirplaneDetailSerializer,
+                                 CrewSerializer,
+                                 CrewDetailSerializer,
+                                 FlightSerializer,
+                                 FlightListSerializer,
+                                 FlightDetailSerializer,
+                                 OrderSerializer,
+                                 OrderListSerializer,
+                                 OrderDetailSerializer)
 
 
 class AirportViewSet(viewsets.ModelViewSet):
@@ -38,7 +58,7 @@ class RouteViewSet(viewsets.ModelViewSet):
 class AirplaneTypeViewSet(viewsets.ModelViewSet):
     queryset = AirplaneType.objects.all()
     serializer_class = AirplaneTypeSerializer
-    permission_classes = (AdminAllOrIsAuthenticatedReadOnly,)
+    permission_classes = (IsAdminUserOnly,)
 
 
 class AirplaneViewSet(viewsets.ModelViewSet):
@@ -102,7 +122,9 @@ class FlightViewSet(viewsets.ModelViewSet):
             )
         elif self.action == "retrieve":
             return (
-                queryset.select_related("route__source", "route__destination", "airplane")
+                queryset.select_related("route__source",
+                                        "route__destination",
+                                        "airplane")
                 .prefetch_related("crew")
             )
 

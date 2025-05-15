@@ -1,6 +1,8 @@
 from django.db import models
-from django.contrib.auth.models import AbstractUser, UserManager as DjangoUserManager
+from django.contrib.auth.models import (AbstractUser,
+                                        UserManager as DjangoUserManager)
 from django.utils.translation import gettext as _
+
 
 class UserManager(DjangoUserManager):
     """Define a model manager for User model with no username field."""
@@ -34,6 +36,7 @@ class UserManager(DjangoUserManager):
             raise ValueError("Superuser must have is_superuser=True.")
 
         return self._create_user(email, password, **extra_fields)
+
 
 class User(AbstractUser):
     username = None

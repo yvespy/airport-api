@@ -1,7 +1,14 @@
 from django.db import transaction
 from rest_framework import serializers
 
-from airport.models import Airport, Route, AirplaneType, Airplane, Crew, Flight, Ticket, Order
+from airport.models import (Airport,
+                            Route,
+                            AirplaneType,
+                            Airplane,
+                            Crew,
+                            Flight,
+                            Ticket,
+                            Order)
 
 
 class AirportSerializer(serializers.ModelSerializer):
@@ -13,7 +20,8 @@ class AirportSerializer(serializers.ModelSerializer):
         name = data.get("name")
         city = data.get("closest_big_city")
 
-        if Airport.objects.filter(name__iexact=name, closest_big_city__iexact=city).exists():
+        if Airport.objects.filter(name__iexact=name,
+                                  closest_big_city__iexact=city).exists():
             raise serializers.ValidationError("An airport with this name and city already exists.")
 
         return data
@@ -109,7 +117,9 @@ class CrewFlightSerializer(serializers.ModelSerializer):
 
 
 class CrewDetailSerializer(CrewSerializer):
-    flights = CrewFlightSerializer(source="flight_set",many=True, read_only=True)
+    flights = CrewFlightSerializer(source="flight_set",
+                                   many=True,
+                                   read_only=True)
 
     class Meta:
         model = Crew
@@ -117,12 +127,14 @@ class CrewDetailSerializer(CrewSerializer):
 
 
 class FlightSerializer(serializers.ModelSerializer):
-    route = RouteSerializer()
-    airplane = AirplaneSerializer()
-    crew = CrewSerializer(many=True)
     class Meta:
         model = Flight
-        fields = ("id", "route", "airplane", "departure_time", "arrival_time", "crew")
+        fields = ("id",
+                  "route",
+                  "airplane",
+                  "departure_time",
+                  "arrival_time",
+                  "crew")
 
     def validate(self, data):
         departure = data.get("departure_time")
@@ -164,7 +176,9 @@ class FlightListSerializer(FlightSerializer):
         )
 
 
-class TicketSerializer(serializers.ModelSerializer): #Fix it later
+class TicketSerializer(serializers.ModelSerializer):
+    flight = FlightListSerializer(read_only=True)
+
     class Meta:
         model = Ticket
         fields = ("id", "row", "seat", "flight")
@@ -174,23 +188,27 @@ class TicketSerializer(serializers.ModelSerializer): #Fix it later
         row = attrs.get("row")
         seat = attrs.get("seat")
 
-        if Ticket.objects.filter(flight=flight, row=row, seat=seat).exists():
+        if Ticket.objects.filter(flight=flight,
+                                 row=row,
+                                 seat=seat).exists():
             raise serializers.ValidationError("A ticket with this flight, row, and seat already exists.")
 
         return attrs
 
 
-class TakenSeatSerializer(serializers.ModelSerializer):#Fix it later
+class TakenSeatSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ticket
         fields = ("row", "seat")
 
 
-class FlightDetailSerializer(FlightSerializer):#Fix it later
-    route = RouteDetailSerializer()
-    airplane = AirplaneDetailSerializer()
-    crew = CrewSerializer(many=True)
-    taken_seats= TakenSeatSerializer(source="tickets", many=True, read_only=True)
+class FlightDetailSerializer(FlightSerializer):
+    route = RouteDetailSerializer(read_only=True)
+    airplane = AirplaneDetailSerializer(read_only=True)
+    crew = CrewSerializer(many=True, read_only=True)
+    taken_seats = TakenSeatSerializer(source="tickets",
+                                      many=True,
+                                      read_only=True)
 
     class Meta:
         model = Flight
@@ -201,7 +219,7 @@ class TicketListSerializer(TicketSerializer):
     flight = FlightListSerializer(read_only=True)
 
 
-class OrderSerializer(serializers.ModelSerializer):#Fix it later
+class OrderSerializer(serializers.ModelSerializer):
     tickets = TicketSerializer(many=True, read_only=False, allow_empty=False)
 
     class Meta:
@@ -222,7 +240,6 @@ class OrderSerializer(serializers.ModelSerializer):#Fix it later
 
         return attrs
 
-
     def create(self, validated_data):
         with transaction.atomic():
             tickets_data = validated_data.pop("tickets")
@@ -232,16 +249,15 @@ class OrderSerializer(serializers.ModelSerializer):#Fix it later
             return order
 
 
-class OrderListSerializer(OrderSerializer):#Fix it later
+class OrderListSerializer(OrderSerializer):
     tickets = TicketListSerializer(many=True, read_only=True)
-
 
     class Meta:
         model = Order
         fields = ("id", "created_at", "tickets")
 
 
-class OrderDetailSerializer(OrderSerializer):#Fix it later
+class OrderDetailSerializer(OrderSerializer):
     tickets = TicketSerializer(many=True, read_only=True)
 
     class Meta:
