@@ -1,4 +1,5 @@
 from django.db.models import Count, F
+from drf_spectacular.utils import extend_schema
 from rest_framework import viewsets
 
 from airport.models import (Airport,
@@ -34,6 +35,26 @@ class AirportViewSet(viewsets.ModelViewSet):
     serializer_class = AirportSerializer
     permission_classes = (AdminAllOrIsAuthenticatedReadOnly,)
 
+    @extend_schema(summary="List all airports")
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @extend_schema(summary="Retrieve airport details")
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
+
+    @extend_schema(summary="Create a new airport")
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
+
+    @extend_schema(summary="Update an airport")
+    def update(self, request, *args, **kwargs):
+        return super().update(request, *args, **kwargs)
+
+    @extend_schema(summary="Delete an airport")
+    def destroy(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)
+
 
 class RouteViewSet(viewsets.ModelViewSet):
     queryset = Route.objects.all()
@@ -54,11 +75,51 @@ class RouteViewSet(viewsets.ModelViewSet):
 
         return queryset
 
+    @extend_schema(summary="List all routes")
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @extend_schema(summary="Retrieve route details")
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
+
+    @extend_schema(summary="Create a new route")
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
+
+    @extend_schema(summary="Update a route")
+    def update(self, request, *args, **kwargs):
+        return super().update(request, *args, **kwargs)
+
+    @extend_schema(summary="Delete a route")
+    def destroy(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)
+
 
 class AirplaneTypeViewSet(viewsets.ModelViewSet):
     queryset = AirplaneType.objects.all()
     serializer_class = AirplaneTypeSerializer
     permission_classes = (IsAdminUserOnly,)
+
+    @extend_schema(summary="List all airplane types")
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @extend_schema(summary="Retrieve airplane type details")
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
+
+    @extend_schema(summary="Create airplane type")
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
+
+    @extend_schema(summary="Update airplane type")
+    def update(self, request, *args, **kwargs):
+        return super().update(request, *args, **kwargs)
+
+    @extend_schema(summary="Delete airplane type")
+    def destroy(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)
 
 
 class AirplaneViewSet(viewsets.ModelViewSet):
@@ -80,6 +141,26 @@ class AirplaneViewSet(viewsets.ModelViewSet):
 
         return queryset
 
+    @extend_schema(summary="List all airplanes")
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @extend_schema(summary="Retrieve airplane details")
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
+
+    @extend_schema(summary="Create an airplane")
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
+
+    @extend_schema(summary="Update an airplane")
+    def update(self, request, *args, **kwargs):
+        return super().update(request, *args, **kwargs)
+
+    @extend_schema(summary="Delete an airplane")
+    def destroy(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)
+
 
 class CrewViewSet(viewsets.ModelViewSet):
     queryset = Crew.objects.all()
@@ -97,6 +178,26 @@ class CrewViewSet(viewsets.ModelViewSet):
             return queryset.prefetch_related("flight_set__airplane")
 
         return queryset
+
+    @extend_schema(summary="List all crews")
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @extend_schema(summary="Retrieve crew details")
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
+
+    @extend_schema(summary="Create crew")
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
+
+    @extend_schema(summary="Update crew")
+    def update(self, request, *args, **kwargs):
+        return super().update(request, *args, **kwargs)
+
+    @extend_schema(summary="Delete crew")
+    def destroy(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)
 
 
 class FlightViewSet(viewsets.ModelViewSet):
@@ -130,6 +231,35 @@ class FlightViewSet(viewsets.ModelViewSet):
 
         return queryset
 
+    @extend_schema(
+        summary="List of flights",
+        description="Returns a list of available flights with available tickets.",
+        responses={200: FlightListSerializer},
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @extend_schema(
+        summary="Retrieve flight",
+        description="Returns detailed information about a flight, including route, airplane, crew and taken seats.",
+        responses={200: FlightDetailSerializer},
+    )
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
+
+    @extend_schema(
+        summary="Create flight",
+        description="Create a new flight by referencing existing route and airplane. Crew must also be specified.",
+        request=FlightSerializer,
+        responses={201: FlightSerializer},
+    )
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
+
+    @extend_schema(summary="Delete flight")
+    def destroy(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)
+
 
 class OrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all()
@@ -150,3 +280,15 @@ class OrderViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+
+    @extend_schema(summary="List current user's orders")
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @extend_schema(summary="Retrieve order with tickets and flights")
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
+
+    @extend_schema(summary="Create new order with tickets")
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
