@@ -146,6 +146,7 @@ class FlightSerializer(serializers.ModelSerializer):
         route = data.get("route")
         airplane = data.get("airplane")
 
+
         if Flight.objects.filter(
             route=route,
             airplane=airplane,
@@ -154,6 +155,20 @@ class FlightSerializer(serializers.ModelSerializer):
         ).exists():
             raise serializers.ValidationError(
                 "A flight with this route, airplane, departure time, and arrival time already exists."
+            )
+
+        overlapping_flights = Flight.objects.filter(
+            airplane=airplane,
+            departure_time__lt=arrival,
+            arrival_time__gt=departure
+        )
+
+        if self.instance:
+            overlapping_flights = overlapping_flights.exclude(id=self.instance.id)
+
+        if overlapping_flights.exists():
+            raise serializers.ValidationError(
+                "This airplane is already assigned to another flight in this time range."
             )
 
         return data
@@ -215,12 +230,34 @@ class FlightDetailSerializer(FlightSerializer):
         fields = ("id", "route", "airplane", "departure_time", "arrival_time", "crew", "taken_seats")
 
 
-class TicketListSerializer(TicketSerializer):
+class TicketCreateSerializer(serializers.ModelSerializer):
+    flight = serializers.PrimaryKeyRelatedField(queryset=Flight.objects.all())
+
+    class Meta:
+        model = Ticket
+        fields = ("id", "row", "seat", "flight")
+
+    def validate(self, attrs):
+        flight = attrs.get("flight")
+        row = attrs.get("row")
+        seat = attrs.get("seat")
+
+        if Ticket.objects.filter(flight=flight, row=row, seat=seat).exists():
+            raise serializers.ValidationError("A ticket with this flight, row, and seat already exists.")
+
+        return attrs
+
+
+class TicketListSerializer(serializers.ModelSerializer):
     flight = FlightListSerializer(read_only=True)
+
+    class Meta:
+        model = Ticket
+        fields = ("id", "row", "seat", "flight")
 
 
 class OrderSerializer(serializers.ModelSerializer):
-    tickets = TicketSerializer(many=True, read_only=False, allow_empty=False)
+    tickets = TicketCreateSerializer(many=True)
 
     class Meta:
         model = Order
