@@ -54,6 +54,13 @@ It allows you to manage airports, routes, airplane types, airplanes, crew member
    ```bash
    python manage.py runserver
    ```
+## Running with Docker
+- Ensure Docker is installed on your system.
+- Build and run the containers:
+```bash
+docker-compose build
+docker-compose up
+```
 ## Authentication
 - JWT-based authentication is implemented.
 - Available endpoints:
